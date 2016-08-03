@@ -6,8 +6,11 @@ from time import strftime, sleep
 import calendar
 import shutil
 import os
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
-def getCode():
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
+def get_code():
 
     url = 'https://portal.sw.nat.gov.tw/APGA/GoodsSearch_toByCode'
 
@@ -76,51 +79,116 @@ def getCode():
     
     return(elevens)
 
-def getCustom(year, month):
+browser = RoboBrowser()
+url = 'https://portal.sw.nat.gov.tw/APGA/GA03_LIST?'
+
+def get_custom(year, month):
     
-    file = open('elevens_list_noname.txt', encoding = 'utf-8', mode = 'r')
-    elevens = eval(file.read())
-    file.close()
-    
-    browser = RoboBrowser()
-    url = 'https://portal.sw.nat.gov.tw/APGA/GA03_LIST?'
-    
-    global filename
+    with open('elevens_list_noname.txt', encoding = 'utf-8', mode = 'r') as file:
+        elevens = eval(file.read())
+
     filename = str(year + 1911) + '-' + str(month).zfill(2) + '.txt'
-    global file3
-    file3 = open(filename, encoding = 'utf-8', mode = 'w')
-    header = '國家|貨品分類|中文貨名|英文貨品|數量|數量單位|重量|重量單位|價值\n'
-    file3.write(header)
+    with open(filename, encoding = 'utf-8', mode = 'w') as output:
+        header = '國家|貨品分類|中文貨名|英文貨品|數量|數量單位|重量|重量單位|價值\n'
+        output.write(header)
     
-    for good in range(0, len(elevens) // 250 * 250 - 250 + 1, 250):
-        goodsGroup = ','.join(elevens[good : good + 250])
+        for good in range(0, len(elevens) // 250 * 250 - 250 + 1, 250):
+            goodsGroup = ','.join(elevens[good : good + 250])
         
-        payload = [('minYear', '92'),
-                        ('maxYear', '105'),
-                        ('maxMonth', '5'),
-                        ('minMonth', '1'),
-                        ('maxYearByYear', '104'),
-                        # 3: 進口總值(含復進口), 6: 出口總值(含復出口)
-                        ('searchInfo.TypePort', '6'),
-                        # 資料週期：0: 按月, 1: 按年
-                        ('searchInfo.TypeTime', '0'),
-                        # Year range: 92-105
-                        ('searchInfo.StartYear', str(year)),
-                        ('searchInfo.StartMonth', str(month)),
-                        ('searchInfo.EndMonth', str(month)),
-                        # 11碼稅則
-                        ('searchInfo.goodsType', '11'),
-                        ('searchInfo.goodsCodeGroup', goodsGroup),
-                        # 請點選國家地區: 全部國家
-                        ('searchInfo.CountryName', '請點選國家地區'),
-                        # rbMoney1: 新臺幣, rbMoney2: 美元
-                        ('searchInfo.Type', 'rbMoney2'),
-                        # rbByGood: 按貨品別排列, rbByCountry: 按國家別
-                        ('searchInfo.GroupType', 'rbByCountry'),
-                        ('Search', '開始查詢')]
+            payload = [('minYear', '92'),
+                       ('maxYear', '105'),
+                       ('maxMonth', '6'),
+                       ('minMonth', '1'),
+                       ('maxYearByYear', '104'),
+                       # 3: 進口總值(含復進口), 6: 出口總值(含復出口)
+                       ('searchInfo.TypePort', '6'),
+                       # 資料週期：0: 按月, 1: 按年
+                       ('searchInfo.TypeTime', '0'),
+                       # Year range: 92-105
+                       ('searchInfo.StartYear', str(year)),
+                       ('searchInfo.StartMonth', str(month)),
+                       ('searchInfo.EndMonth', str(month)),
+                       # 11碼稅則
+                       ('searchInfo.goodsType', '11'),
+                       ('searchInfo.goodsCodeGroup', goodsGroup),
+                       # 請點選國家地區: 全部國家
+                       ('searchInfo.CountryName', '請點選國家地區'),
+                       # rbMoney1: 新臺幣, rbMoney2: 美元
+                       ('searchInfo.Type', 'rbMoney2'),
+                       # rbByGood: 按貨品別排列, rbByCountry: 按國家別
+                       ('searchInfo.GroupType', 'rbByCountry'),
+                       ('Search', '開始查詢')]
                    
-        browser.open(url + urllib.parse.urlencode(payload), verify = False)
+            while True:
+                try:
+                    browser.open(url + urllib.parse.urlencode(payload), verify = False)
+                    if browser.response.status_code == 200:
+                        break
+                except:
+                    print('An error has occurred. Retrying.')
+                    sleep(30)
         
+            dataListNumber = 'dataList_' + str(month)
+            table = browser.find_all('table', {'id':dataListNumber})
+            tds = []
+            for table_element in table:
+                rows = table_element.find_all('tr')
+                for row in rows:
+                    td = row.find_all('td')
+                    tds.append(td)
+                
+            data = ''
+            for index in range(1, len(tds)):
+                row_data = tds[index]
+                if row_data[1].text == '合計':
+                    continue
+                for data_index in range(8):
+                    data += row_data[data_index].text + '|'
+                data += row_data[8].text + '\n'
+
+            output.write(data)
+            terminal_size = shutil.get_terminal_size()[0]
+            print('Data for',
+                  goodsGroup[0:10] + '-' +
+                  goodsGroup[(len(goodsGroup) - 10):len(goodsGroup)],
+                  calendar.month_name[month] + ', %s' % (year + 1911),
+                  'written on', strftime("%Y-%m-%d %H:%M:%S"))
+    
+        goodsGroup2 = ','.join(elevens[len(elevens) // 250 * 250 : len(elevens)])
+
+        payload = [('minYear', '92'),
+                   ('maxYear', '105'),
+                   ('maxMonth', '6'),
+                   ('minMonth', '1'),
+                   ('maxYearByYear', '104'),
+                   # 3: 進口總值(含復進口), 6: 出口總值(含復出口)
+                   ('searchInfo.TypePort', '6'),
+                   # 資料週期：0: 按月, 1: 按年
+                   ('searchInfo.TypeTime', '0'),
+                   # Year range: 92-105
+                   ('searchInfo.StartYear', str(year)),
+                   ('searchInfo.StartMonth', str(month)),
+                   ('searchInfo.EndMonth', str(month)),
+                   # 11碼稅則
+                   ('searchInfo.goodsType', '11'),
+                   ('searchInfo.goodsCodeGroup', goodsGroup2),
+                   # 請點選國家地區: 全部國家
+                   ('searchInfo.CountryName', '請點選國家地區'),
+                   # rbMoney1: 新臺幣, rbMoney2: 美元
+                   ('searchInfo.Type', 'rbMoney2'),
+                   # rbByGood: 按貨品別排列, rbByCountry: 按國家別
+                   ('searchInfo.GroupType', 'rbByCountry'),
+                   ('Search', '開始查詢')]
+                   
+        while True:
+            try:
+                browser.open(url + urllib.parse.urlencode(payload), verify = False)
+                if browser.response.status_code == 200:
+                    break
+            except:
+                print('An error has occurred. Retrying.')
+                sleep(30)
+
         dataListNumber = 'dataList_' + str(month)
         table = browser.find_all('table', {'id':dataListNumber})
         tds = []
@@ -129,113 +197,36 @@ def getCustom(year, month):
             for row in rows:
                 td = row.find_all('td')
                 tds.append(td)
-                
+            
         data = ''
-        # for index in range(1, int((len(tds) - 1) / 2) + 1):
-            # row_data = tds[2 * index]
-            # for data_index in range(8):
-                # data += row_data[data_index].text + '|'
-            # data += row_data[8].text + '\n'
         for index in range(1, len(tds)):
             row_data = tds[index]
             if row_data[1].text == '合計':
                 continue
             for data_index in range(8):
                 data += row_data[data_index].text + '|'
-            data += row_data[8].text + '\n'
+            if index != len(tds) - 1:
+                data += row_data[8].text + '\n'
+            else:
+                data += row_data[8].text
 
-        file3.write(data)
-        terminal_size = shutil.get_terminal_size()[0]
-        print('=' * terminal_size +
-        'Data for ' + goodsGroup + ', ' + calendar.month_name[month] + ', %s' % (year + 1911) +
-        ' written on ' + strftime("%Y-%m-%d %H:%M:%S") + '\n' +
-        '=' * terminal_size + '\n')
-        # time.sleep(10)
+        output.write(data)
+        print('Data for',
+              goodsGroup2[0:10] + '-' +
+              goodsGroup2[(len(goodsGroup2) - 10):len(goodsGroup2)],
+              calendar.month_name[month] + ', %s' % (year + 1911),
+              'written on', strftime("%Y-%m-%d %H:%M:%S"))
     
-    goodsGroup2 = ','.join(elevens[len(elevens) // 250 * 250 : len(elevens) - 1])
-
-    payload = [('minYear', '92'),
-                    ('maxYear', '105'),
-                    ('maxMonth', '5'),
-                    ('minMonth', '1'),
-                    ('maxYearByYear', '104'),
-                    # 3: 進口總值(含復進口), 6: 出口總值(含復出口)
-                    ('searchInfo.TypePort', '6'),
-                    # 資料週期：0: 按月, 1: 按年
-                    ('searchInfo.TypeTime', '0'),
-                    # Year range: 92-105
-                    ('searchInfo.StartYear', str(year)),
-                    ('searchInfo.StartMonth', str(month)),
-                    ('searchInfo.EndMonth', str(month)),
-                    # 11碼稅則
-                    ('searchInfo.goodsType', '11'),
-                    ('searchInfo.goodsCodeGroup', goodsGroup2),
-                    # 請點選國家地區: 全部國家
-                    ('searchInfo.CountryName', '請點選國家地區'),
-                    # rbMoney1: 新臺幣, rbMoney2: 美元
-                    ('searchInfo.Type', 'rbMoney2'),
-                    # rbByGood: 按貨品別排列, rbByCountry: 按國家別
-                    ('searchInfo.GroupType', 'rbByCountry'),
-                    ('Search', '開始查詢')]
-           
-    browser.open(url + urllib.parse.urlencode(payload), verify = False)
-
-    dataListNumber = 'dataList_' + str(month)
-    table = browser.find_all('table', {'id':dataListNumber})
-    tds = []
-    for table_element in table:
-        rows = table_element.find_all('tr')
-        for row in rows:
-            td = row.find_all('td')
-            tds.append(td)
-            
-    data = ''
-    # for index in range(1, int((len(tds) - 1) / 2) + 1):
-        # row_data = tds[2 * index]
-        # for data_index in range(8):
-            # data += row_data[data_index].text + '|'
-        # data += row_data[8].text + '\n'
-    for index in range(1, len(tds)):
-        row_data = tds[index]
-        if row_data[1].text == '合計':
-            continue
-        for data_index in range(8):
-            data += row_data[data_index].text + '|'
-        if index != len(tds) - 1:
-            data += row_data[8].text + '\n'
-        else:
-            data += row_data[8].text
-
-    file3.write(data)
-    terminal_size = shutil.get_terminal_size()[0]
     print('=' * terminal_size +
-    'Data for ' + goodsGroup2 + ', ' + calendar.month_name[month] + ', %s' % (year + 1911) +
-    ' written on ' + strftime("%Y-%m-%d %H:%M:%S") + '\n' +
-    '=' * terminal_size + '\n')
-    # time.sleep(10)
-    
-    file3.close()
-    print('=' * terminal_size +
-    calendar.month_name[month] + ', %s' % (year + 1911) +
-    ' data successfully downloaded on ' + strftime("%Y-%m-%d %H:%M:%S") + '\n' +
+    calendar.month_name[month] + ', %s' % (year + 1911),
+    'data successfully downloaded on', strftime("%Y-%m-%d %H:%M:%S") + '\n' +
     '=' * terminal_size + '\n')
     return()
 
-def getAllData():
-    for month in range(7, 13):
-        while True:
-            try:
-                getCustom(104, month)
-                break
-            except:
-                file3.close()
-                os.remove(filename)
-    for month in range(1, 6):
-        while True:
-            try:
-                getCustom(105, month)
-                break
-            except:
-                file3.close()
-                os.remove(filename)
+def get_batch_data():
+    for month in range(1, 7):
+        get_custom(105, month)
+    for year in range(92, 105):
+        for month in range(1, 13):
+            get_custom(year, month)
     return()
