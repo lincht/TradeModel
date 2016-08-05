@@ -79,7 +79,6 @@ def get_code():
     
     return(elevens)
 
-browser = RoboBrowser()
 url = 'https://portal.sw.nat.gov.tw/APGA/GA03_LIST?'
 
 def get_custom(year, month):
@@ -121,12 +120,14 @@ def get_custom(year, month):
                    
             while True:
                 try:
+                    browser = RoboBrowser()
                     browser.open(url + urllib.parse.urlencode(payload), verify = False)
                     if browser.response.status_code == 200:
                         break
                 except:
                     print('An error has occurred. Retrying.')
-                    sleep(30)
+                    print(browser.response.text)
+                    sleep(60)
         
             dataListNumber = 'dataList_' + str(month)
             table = browser.find_all('table', {'id':dataListNumber})
@@ -182,12 +183,14 @@ def get_custom(year, month):
                    
         while True:
             try:
+                browser = RoboBrowser()
                 browser.open(url + urllib.parse.urlencode(payload), verify = False)
                 if browser.response.status_code == 200:
                     break
             except:
                 print('An error has occurred. Retrying.')
-                sleep(30)
+                print(browser.response.text)
+                sleep(60)
 
         dataListNumber = 'dataList_' + str(month)
         table = browser.find_all('table', {'id':dataListNumber})
@@ -224,7 +227,7 @@ def get_custom(year, month):
     return()
 
 def get_batch_data():
-    for month in range(1, 7):
+    for month in range(5, 7):
         get_custom(105, month)
     for year in range(92, 105):
         for month in range(1, 13):
