@@ -136,8 +136,16 @@ def get_custom_data(year=curr_year, month=prev_month, io='export',
     df = pd.concat([df, get_data(payload)], axis=0, ignore_index=True)
     
     # write data
-    filename = '//172.20.23.190/ds/Raw Data/MOF-us-2003-2016-import/\
-{}-{}.tsv'.format(str(year + 1911), str(month).zfill(2))
+    if currency == 'usd':
+        placeholder1 = 'us'
+    else:
+        placeholder1 = 'nt'
+    if io == 'export':
+        placeholder2 = 'rev'
+    else:
+        placeholder2 = 'import'
+    filename = '//172.20.23.190/ds/Raw Data/MOF-{}-2003-2017-{}/\
+{}-{}.tsv'.format(placeholder1, placeholder2, str(year + 1911), str(month).zfill(2))
     # filename = str(year + 1911) + '-' + str(month).zfill(2) + '.tsv'
     with open(filename, encoding='utf-8', mode='w') as output:
         df.to_csv(output, sep='\t', header=True, index=False, encoding='utf-8')
