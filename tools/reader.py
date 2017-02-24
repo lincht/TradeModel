@@ -3,7 +3,7 @@
 #   2. UN
 #   3. MOF company trade data
 #   4. MOF customs data
-#   5. MOF customs product descriptions
+#   5. Product descriptions (MOF or UN)
 #   6. MOF country codes
 
 import os
@@ -130,22 +130,36 @@ def read_customs(start='2003-01', end='2016-12'):
     df.fillna(0, inplace=True)
     return df
 
-def read_product_desc():
+def read_product_desc(source='mof'):
     """
-    Read MOF product descriptions.
-    Variables: product (HS2 to HS8), desc.
+    Read product descriptions.
+    
+    Parameters
+    ----------
+    source : string, optional (default='mof)
+        Supported sources are 'mof' for MOF and 'un' for UN.
+        - If 'mof', then variables are product (HS2 to HS8), desc.
+        - If 'un', then variables are product (HS2 to HS6), parent, desc.
+          Note that there are six special codes: 'ALL', 'TOTAL', 'AG2', 'AG4', 'AG6', '9999AA'.
     """
-    path = ('C:/Users/2093/Desktop/Data Center/03. Data/01. HS_code/customs/' +
-    '稅則貨名檔(八碼)_最後更新時間 2017-02-07/note_8_C.txt')
-    with open(path, encoding='utf-8') as f:
-        txt = f.read()
-    # Handle some parsing issues
-    txt = re.sub(r'(\d)[ ]+', r'\1 ', txt)
-    txt = re.sub(r',', '，', txt)
-    txt = re.sub(r'(\D)[ ]+', r'\1', txt)
-    txt = re.sub(r'HS_NONOTE', r'HS_NO NOTE', txt)
-    desc = pd.read_csv(StringIO(txt), sep=' ', header=0, names=['product', 'desc'])
-    return desc
+    if source == 'mof':
+        path = ('C:/Users/2093/Desktop/Data Center/03. Data/01. HS_code/customs/' +
+        '稅則貨名檔(八碼)_最後更新時間 2017-02-07/note_8_C.txt')
+        with open(path, encoding='utf-8') as f:
+            txt = f.read()
+        # Handle some parsing issues
+        txt = re.sub(r'(\d)[ ]+', r'\1 ', txt)
+        txt = re.sub(r',', '，', txt)
+        txt = re.sub(r'(\D)[ ]+', r'\1', txt)
+        txt = re.sub(r'HS_NONOTE', r'HS_NO NOTE', txt)
+        desc = pd.read_csv(StringIO(txt), sep=' ', header=0, names=['product', 'desc'])
+        return desc
+    elif source == 'un':
+        path = '//172.26.1.102/dstore/uncomtrade/HS_utf-8.csv'
+        desc = pd.read_csv(path, header=0, names=['product', 'parent', 'desc'])
+        return desc
+    else:
+        raise ValueError('Invalid source arg "{}"'.format(source))
 
 def read_country_code():
     """
