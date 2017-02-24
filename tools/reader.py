@@ -136,7 +136,7 @@ def read_product_desc(source='mof'):
     
     Parameters
     ----------
-    source : string, optional (default='mof)
+    source : string, optional (default='mof')
         Supported sources are 'mof' for MOF and 'un' for UN.
         - If 'mof', then variables are product (HS2 to HS8), desc.
         - If 'un', then variables are product (HS2 to HS6), parent, desc.
