@@ -171,7 +171,7 @@ def read_country_code(source='mof'):
         Supported sources are 'mof' for MOF, 'un_rep' for UN reporters, 'un_par' for UN partners.
         - If 'mof', then variables are code, country, region.
         - If 'un_rep' or 'un_par', then variables are code and country.
-          Note that there is one special code 'all'.
+          Note that there are special codes 'all' in 'un_rep', and '0', 'all' in 'un_par'.
     """
     if source == 'mof':
         return pd.read_csv('C:/Users/2093/Desktop/Data Center/03. Data/05. TAITRA/CRM/country.csv',
