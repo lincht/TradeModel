@@ -4,7 +4,7 @@
 #   3. MOF company trade data
 #   4. MOF customs data
 #   5. Product descriptions (MOF or UN)
-#   6. MOF country codes
+#   6. Country codes (MOF or UN reporter/partner)
 
 import os
 import itertools
@@ -161,12 +161,27 @@ def read_product_desc(source='mof'):
     else:
         raise ValueError('Invalid source arg "{}"'.format(source))
 
-def read_country_code():
+def read_country_code(source='mof'):
     """
-    Read MOF country codes.
-    Variables: code, country, region.
+    Read country codes.
+    
+    Parameters
+    ----------
+    source : string, optional (default='mof')
+        Supported sources are 'mof' for MOF, 'un_rep' for UN reporters, 'un_par' for UN partners.
+        - If 'mof', then variables are code, country, region.
+        - If 'un_rep' or 'un_par', then variables are code and country.
+          Note that there is one special code 'all'.
     """
-    df = pd.read_csv('C:/Users/2093/Desktop/Data Center/03. Data/05. TAITRA/CRM/country.csv',
-                     usecols=[0, 1, 3], header=0, names=['code', 'country', 'region']).apply(
-        lambda x: x.str.strip())
-    return df
+    if source == 'mof':
+        return pd.read_csv('C:/Users/2093/Desktop/Data Center/03. Data/05. TAITRA/CRM/country.csv',
+                           usecols=[0, 1, 3], header=0, names=['code', 'country', 'region']).apply(
+            lambda x: x.str.strip())
+    elif source == 'un_rep':
+        return pd.read_csv('//172.26.1.102/dstore/uncomtrade/reporter.csv', header=0,
+                           names=['code', 'country'])
+    elif source == 'un_par':
+        return pd.read_csv('//172.26.1.102/dstore/uncomtrade/partner.csv', header=0,
+                           names=['code', 'country'])
+    else:
+        raise ValueError('Invalid source arg "{}"'.format(source))
