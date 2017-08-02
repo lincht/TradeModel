@@ -127,13 +127,13 @@ shinyServer(function(input, output, session) {
       add_legend('fill', title = paste0('臺灣於', input$myCtry, '市占率'),
                  values = c('0 %', '0 - 12.5 %', '12.5 - 25 %', '25 - 37.5 %',
                             '37.5 - 50 %', '逾 50 %'),
-                 properties = legend_props(title = list(fontSize = 12, fontWeight = 'bold', fill = 'white'),
-                                           labels = list(fontSize = 11, fontWeight = 'bold', fill = 'white', dx = 5),
+                 properties = legend_props(title = list(fontSize = 12, fontWeight = 'bold', fill = '#555555'),
+                                           labels = list(fontSize = 11, fontWeight = 'bold', fill = '#555555', dx = 5),
                                            symbol = list(size = 70, strokeWidth = 0),
                                            legend = list(y = scaled_value('y_rel', 0.85)))) %>%
       add_legend('shape', title = '臺灣有無出口', values = c('無', '有'),
-                 properties = legend_props(title = list(fontSize = 12, fontWeight = 'bold', fill = 'white'),
-                                           labels = list(fontSize = 11, fontWeight = 'bold', fill = 'white', dx = 5),
+                 properties = legend_props(title = list(fontSize = 12, fontWeight = 'bold', fill = '#555555'),
+                                           labels = list(fontSize = 11, fontWeight = 'bold', fill = '#555555', dx = 5),
                                            symbol = list(size = 70, strokeWidth = 1.5),
                                            legend = list(y = scaled_value('y_rel', 1)))) %>%
       add_tooltip(allValues, 'hover') %>%
@@ -170,7 +170,7 @@ shinyServer(function(input, output, session) {
   output$hs6Selector <- renderUI({selectInput('myhs6', '6碼', as.list(hs4.p()))})
   # Get HS6
   p.code <- reactive({substr(input$myhs6, 1, 6)})
-  output$p_code <- renderText({paste0('<font color=\"#2171B5\"><b>', p.code(), '</b></font>')})
+  output$p_code <- renderText({paste0('<font color=\"#08306B\"><b>', p.code(), '</b></font>')})
   
   # Read HS2 data
   all.p <- reactive({
@@ -200,9 +200,9 @@ shinyServer(function(input, output, session) {
   
   # Get HS2, HS4, HS6 names
   p.row <- reactive({all.p()[match(p.code(), all.p()$product), ]})
-  desc2_evt <- eventReactive(input$myhs6, {validate(need(hs2(), '')); paste0('<font color=\"#2171B5\"><b>', p.row()$desc2, '</b></font>')})
-  desc4_evt <- eventReactive(input$myhs6, {validate(need(hs2(), '')); paste0('<font color=\"#6BAED6\"><b>', p.row()$desc4, '</b></font>')})
-  desc6_evt <- eventReactive(input$myhs6, {validate(need(hs2(), '')); paste0('<font color=\"#C6DBEF\"><b>', p.row()$desc6, '</b></font>')})
+  desc2_evt <- eventReactive(input$myhs6, {validate(need(hs2(), '')); paste0('<font color=\"#08306B\"><b>', p.row()$desc2, '</b></font>')})
+  desc4_evt <- eventReactive(input$myhs6, {validate(need(hs2(), '')); paste0('<font color=\"#2171B5\"><b>', p.row()$desc4, '</b></font>')})
+  desc6_evt <- eventReactive(input$myhs6, {validate(need(hs2(), '')); paste0('<font color=\"#6BAED6\"><b>', p.row()$desc6, '</b></font>')})
   output$p_desc2 <- renderText({desc2_evt()})
   output$p_desc4 <- renderText({desc4_evt()})
   output$p_desc6 <- renderText({desc6_evt()})
